@@ -14,6 +14,36 @@ Requires `:language-in` compiler option set to `:ecmascript-2017` or newer ECMAS
       (.log js/console json))))
 ```
 
+## Limitations
+JavaScript's `await` statement is not allowed to be used in non-async functions which causes a problem because of ClojureScript's codegen. When translated into JavaScript, constructs like the one below emit self-invoking function in place of `do`. Once JavaScript gets [`do` expressions](https://github.com/tc39/proposal-do-expressions) this limitation can be overcome.
+```clojure
+(async
+  (let [x (do (inc 1) (await 2))]
+    x))
+```
+
+Output:
+```javascript
+(async function() {
+  var x = (function() {
+    1 + 1;
+    return await 2;
+  })();
+  return x;
+})()
+```
+
+Output with `do` expression:
+```javascript
+(async function() {
+  var x = do {
+    1 + 1;
+    await 2;
+  };
+  return x;
+})()
+```
+
 ## API
 - `async` wraps body into self-invoking JavaScript's async function, returns promise
 - `await` suspends execution of current async block and returns asynchronously resolved value
